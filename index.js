@@ -29,31 +29,98 @@ async function run() {
         const bookingsCollection = client.db('doctorsPortal').collection('bookings');
 
         // Use Aggregate to query multiple collection and then marge data
-        app.get('/appointmentOptions', async(req, res) => {
+        app.get('/appointmentOptions', async (req, res) => {
             const date = req.query.date;
             const query = {};
             const options = await appointmentOptionsCollection.find(query).toArray();
-            const bookingQuery = {appointmentDate: date};
+            const bookingQuery = { appointmentDate: date };
             const alreadyBooked = await bookingsCollection.find(bookingQuery).toArray();
 
-            // code carefully 😀 :D
+            // code carefully :D
             options.forEach(option => {
-                const optionBooked = alreadyBooked.filter(book => book.treatment === option.name)
-                const bookedSlot = optionBooked.map(book => book.slot);
-                console.log( date, option.name, optionBooked);
+                const optionBooked = alreadyBooked.filter(book => book.treatment === option.name);
+                const bookedSlots = optionBooked.map(book => book.slot);
+                const remainningSlots = option.slots.filter(slot => !bookedSlots.includes(slot));
+                option.slots = remainningSlots;
             })
             res.send(options);
-        })
+        });
 
-        app.post('/bookings', async(req, res) => {
+        //  //  //
+        // app.get('/v2/appointmentOptions', async (req, res) => {
+        //     const date = req.query;
+        //     const options = await appointmentOptionsCollection.aggregate([
+        //         {
+        //             $lookup: {
+        //                 from: 'bookings',
+        //                 localField: 'name',
+        //                 foreignField: 'treatment',
+        //                 pipeline: [ 
+        //                     {
+        //                         $match: {
+        //                             $expr: { 
+        //                                 $ep: ['$appointmentDate', date]
+        //                              }
+        //                         }
+        //                     }
+        //                 ],
+        //                 as: 'booked'
+        //             }
+        //         },
+        //         {
+        //             $project:{
+        //                 name: 1,
+        //                 slots: 1,
+        //                 booked: {
+        //                     $map: {
+        //                         input: '$booked',
+        //                         as: 'book',
+        //                         in: '$$book.slot'
+        //                     }
+        //                 }
+        //             }
+        //         },
+        //         {
+        //             $project: {
+        //                 name: 1,
+        //                 slots: {
+        //                     $setDifference: ['$slots', '$booked']
+        //                 }
+        //             }
+        //         }
+        //     ]).toArray();
+        //     res.send(options);
+        // })
+        // //  //
+
+        app.get('/bookings', async(req , res) => {
+            const email = req.query.email;
+            const query = {email: email};
+            const bookings = await bookingsCollection.find(query).toArray();
+            res.send(bookings);
+        });
+
+        app.post('/bookings', async (req, res) => {
             const booking = req.body;
             console.log(booking);
+            const query = {
+                appointmentDate: booking.appointmentDate,
+                treatment: booking.treatment,
+                email: booking.email
+            }
+
+            const alreadyBooked = await bookingsCollection.find(query).toArray();
+
+            if (alreadyBooked.length) {
+                const message = `you already have a booking on : ${booking.appointmentDate}`;
+                return res.send({acknowledge: false, message});
+            }
             const result = await bookingsCollection.insertOne(booking);
             res.send(result);
         })
 
     } finally {
-        
+
     }
 }
 run().catch(console.log);
