@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
@@ -27,6 +28,7 @@ async function run() {
     try {
         const appointmentOptionsCollection = client.db('doctorsPortal').collection('appointmentOptions');
         const bookingsCollection = client.db('doctorsPortal').collection('bookings');
+        const usersCollection = client.db('doctorsPortal').collection('users'); 
 
         // Use Aggregate to query multiple collection and then marge data
         app.get('/appointmentOptions', async (req, res) => {
@@ -117,7 +119,13 @@ async function run() {
             }
             const result = await bookingsCollection.insertOne(booking);
             res.send(result);
-        })
+        });
+
+        app.post('/users', async(req, res) => {
+            const user = req.body;
+            const result = await usersCollection.insertOne(user);
+            res.send(result);
+        });
 
     } finally {
 
