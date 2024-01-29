@@ -155,9 +155,18 @@ async function run() {
             res.status(403).send({ accessToken: '' })
         });
 
-        app.get('/users', async (req, res) => {
-            const query = {};
-            const users = await usersCollection.find(query).toArray();
+        app.get('/users', verifyJWT, async (req, res) => {
+            const queryAllUsers = {};
+            const decodedEmail = req.decoded.email;
+
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+
+            if (user?.role !== 'admin') {
+                return res.status(403).send([]);
+            }
+
+            const users = await usersCollection.find(queryAllUsers).toArray();
             res.send(users);
         })
 
