@@ -112,6 +112,12 @@ async function run() {
         // })
         // //  //
 
+        app.get('/appointmentSpeciality', async(req, res) => {
+            const query = {};
+            const result = await appointmentOptionsCollection.find(query).project({name: 1, }).toArray();
+            res.send(result);
+        })
+
         app.get('/bookings', verifyJWT, async (req, res) => {
             const email = req.query.email;
             const decodedEmail = req.decoded.email;
