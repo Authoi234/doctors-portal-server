@@ -46,6 +46,7 @@ async function run() {
         const appointmentOptionsCollection = client.db('doctorsPortal').collection('appointmentOptions');
         const bookingsCollection = client.db('doctorsPortal').collection('bookings');
         const usersCollection = client.db('doctorsPortal').collection('users');
+        const doctorsCollection = client.db('doctorsPortal').collection('doctors');
 
         // Use Aggregate to query multiple collection and then marge data
         app.get('/appointmentOptions', async (req, res) => {
@@ -207,6 +208,12 @@ async function run() {
                 }
             }
             const result = await usersCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        });
+
+        app.post('/doctors', async(req, res) => {
+            const doctor = req.body;
+            const result = await doctorsCollection.insertOne(doctor);
             res.send(result);
         })
 
