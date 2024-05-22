@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const nodemailer = require('nodemailer');
+const mg = require('nodemailer-mailgun-transport');
 require('dotenv').config();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
@@ -169,7 +171,7 @@ async function run() {
 
             if (alreadyBooked.length) {
                 const message = `you already have a booking on : ${booking.appointmentDate}`;
-                return res.send({ acknowledge: false, message });
+                return res.send({ acknowledge: false, message: 'You have already booked' });
             }
             const result = await bookingsCollection.insertOne(booking);
             res.send(result);
@@ -192,7 +194,7 @@ async function run() {
             });
         });
 
-        app.post('/payments', async(req, res) => {
+        app.post('/payments', async (req, res) => {
             const payment = req.body;
             const result = await paymentsCollection.insertOne(payment);
             const id = payment.bookingId;
@@ -205,7 +207,7 @@ async function run() {
                     transactionId: payment.transactionId
                 }
             };
-            const updatedResult = await bookingsCollection.updateOne(filter, updatedDoc, {upsert: true})
+            const updatedResult = await bookingsCollection.updateOne(filter, updatedDoc, { upsert: true })
             res.send(result);
         })
 
